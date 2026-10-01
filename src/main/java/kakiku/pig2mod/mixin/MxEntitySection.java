@@ -1,0 +1,61 @@
+package kakiku.pig2mod.mixin;
+
+import kakiku.pig2mod.entity.Pig2;
+import kakiku.pig2mod.xform.MyLib2;
+import net.minecraft.util.ClassInstanceMultiMap;
+import net.minecraft.world.level.entity.EntityAccess;
+import net.minecraft.world.level.entity.EntitySection;
+import net.minecraft.world.level.entity.Visibility;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
+@Mixin({EntitySection.class})
+public abstract class MxEntitySection {
+    @Unique
+    private String thisPackeageName = this.getClass().getPackageName();
+    @Shadow
+    public ClassInstanceMultiMap<EntityAccess> storage;
+    @Shadow
+    public Visibility chunkStatus;
+
+    @Inject(
+        method = {"remove"},
+        at = {@At("HEAD")},
+        cancellable = true
+    )
+    public void remove(EntityAccess pEntity, CallbackInfoReturnable<Boolean> cir) {
+        if (pEntity instanceof Pig2 pig2
+            && !Pig2.isOshimai()
+            && !pig2.isEnding()
+            && Pig2.getAliveServerPigIDs(pig2.level).contains(pig2.id)
+            && !MyLib2.isCalledFromTheClassAndMethod("net.minecraft.world.level.entity.PersistentEntitySectionManager$Callback.onMove")
+            && !MyLib2.isCalledFromTheClassAndMethod("net.minecraft.world.level.entity.TransientEntitySectionManager$Callback.onMove")) {
+            cir.setReturnValue(true);
+            return;
+        }
+    }
+
+    @Inject(
+        method = {"updateChunkStatus"},
+        at = {@At("HEAD")},
+        cancellable = true
+    )
+    public void updateChunkStatus(Visibility pChunkStatus, CallbackInfoReturnable<Visibility> cir) {
+        if (pChunkStatus == Visibility.HIDDEN || pChunkStatus == Visibility.TRACKED && this.chunkStatus == Visibility.TICKING) {
+            for (EntityAccess entityAccess : this.storage.getAllInstances()) {
+                if (entityAccess instanceof Pig2 pig2
+                    && !Pig2.isOshimai()
+                    && !pig2.isEnding()
+                    && Pig2.getAliveServerPigIDs(pig2.level).contains(pig2.id)
+                    && !MyLib2.isCalledFromTheClassAndMethod("net.minecraft.network.protocol.game.ClientboundForgetLevelChunkPacket.handle")) {
+                    cir.setReturnValue(this.chunkStatus);
+                    return;
+                }
+            }
+        }
+    }
+}

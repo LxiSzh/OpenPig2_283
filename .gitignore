@@ -1,0 +1,23 @@
+# Gradle
+.gradle/
+build/
+
+# Runtime directories (created by `gradlew runClient` / `runServer` / `runData`)
+run/
+run-data/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.classpath
+.project
+.settings/
+bin/
+out/
+
+# OS
+Thumbs.db
+.DS_Store
